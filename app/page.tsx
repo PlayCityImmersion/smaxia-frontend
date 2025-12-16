@@ -1,321 +1,303 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
-type Locale = "fr" | "en";
+type Lang = "fr" | "en";
 
-type FormState = {
-  role: string;
-  email: string;
-  org: string;
-  message: string;
-};
+const copy = {
+  en: {
+    heroTagline1: "The Predictive Intelligence Engine",
+    heroTagline2: "for Academic Performance",
+    problemTitle1: "The Problem Is Not Learning.",
+    problemTitle2: "The Problem Is Prediction.",
+    problemP1:
+      "Students study without knowing what truly matters. Institutions evaluate performance only after failure occurs. Decisions are made too late.",
+    problemP2: "Education measures outcomes. It does not anticipate them.",
+    whatTitle: "SMAXIA Is Not an EdTech Platform",
+    whatP1:
+      "It is not content-based. It is not practice-based. It is not probabilistic guessing.",
+    whatP2:
+      "SMAXIA is a scientific prediction system built on invariant mathematical structures.",
+    howTitle: "From Structure, Not From Probability",
+    howProcessLines: [
+      "Academic Material (PDFs, Exams, Programs)",
+      "Mathematical Kernel (Granulo 15 / Granulo 15C)",
+      "Key Questions (QC)",
+      "Predictive Scoring (SMAX*)",
+      "Performance Forecast (PrediNote)",
+      "Adaptive Learning Paths for Each Student",
+    ],
+    howP:
+      "For each chapter, SMAXIA identifies 15 structural questions whose mastery is mathematically linked to the final grade. The system does not \"estimate\" success — it computes it from the underlying structure of knowledge.",
+    whyTitle: "Why SMAXIA Changes the Paradigm",
+    whyBullets: [
+      "Mathematical Invariants — stable across exams, years and systems",
+      "Predictive Reliability — focuses on inevitability, not frequency",
+      "Curriculum-Agnostic — adaptable across countries and programs",
+    ],
+    whyHighlight: "This is not optimization. This is anticipation.",
+    whoTitle: "Who SMAXIA Is For",
+    whoBullets: [
+      "Students seeking certainty, not hope",
+      "Institutions seeking anticipation, not correction",
+      "Systems seeking reliability, not averages",
+    ],
+    globalTitle: "A New Global Standard",
+    globalP1:
+      "SMAXIA is designed to become the global reference for academic prediction — across countries, curricula and generations.",
+    globalP2: "Performance is no longer discovered. It is foreseen.",
+    ctaTitle: "Scientific Partners & Early Contributors",
+    ctaP:
+      "SMAXIA is opening to a limited circle of partners, researchers and early contributors.",
+    ctaButton: "Request Early Access",
+    backToTop: "Back to top",
+    langFr: "FR",
+    langEn: "EN",
+  },
+  fr: {
+    heroTagline1: "Le Moteur d’Intelligence Prédictive",
+    heroTagline2: "au service de la performance académique",
+    problemTitle1: "Le problème n’est pas l’apprentissage.",
+    problemTitle2: "Le problème, c’est la prédiction.",
+    problemP1:
+      "Les élèves révisent sans savoir exactement ce qui compte vraiment. Les institutions évaluent la performance uniquement après l’échec. Les décisions arrivent trop tard.",
+    problemP2:
+      "L’école mesure les résultats. Elle ne les anticipe pas encore.",
+    whatTitle: "SMAXIA n’est pas une plateforme EdTech classique",
+    whatP1:
+      "Ce n’est pas du contenu en plus. Ce n’est pas de l’entraînement massif. Ce n’est pas du calcul de probabilités.",
+    whatP2:
+      "SMAXIA est un système de prédiction scientifique fondé sur des structures mathématiques invariantes.",
+    howTitle: "À partir de la structure, pas des probabilités",
+    howProcessLines: [
+      "Matières académiques (PDF, sujets d’examen, programmes)",
+      "Noyau mathématique (Granulo 15 / Granulo 15C)",
+      "Questions Clés (QC)",
+      "Score prédictif (SMAX*)",
+      "Prévision de performance (PrediNote)",
+      "Parcours d’apprentissage adaptés à chaque élève",
+    ],
+    howP:
+      "Pour chaque chapitre, SMAXIA identifie 15 questions structurelles dont la maîtrise est mathématiquement liée à la note finale. Le système ne « devine » pas le succès — il le calcule à partir de la structure du savoir.",
+    whyTitle: "Pourquoi SMAXIA change le paradigme",
+    whyBullets: [
+      "Invariants mathématiques — stables d’un examen à l’autre, d’une année à l’autre",
+      "Fiabilité prédictive — focalisée sur l’inévitabilité, pas sur la fréquence",
+      "Indépendant des programmes — adaptable à tous les systèmes éducatifs",
+    ],
+    whyHighlight:
+      "Ce n’est pas de l’optimisation. C’est de l’anticipation.",
+    whoTitle: "Pour qui est conçu SMAXIA",
+    whoBullets: [
+      "Élèves et étudiants qui cherchent de la certitude, pas de l’espoir",
+      "Établissements qui veulent anticiper plutôt que corriger",
+      "Systèmes qui visent la fiabilité, pas seulement la moyenne",
+    ],
+    globalTitle: "Un nouveau standard mondial",
+    globalP1:
+      "SMAXIA est conçu pour devenir la référence mondiale de la prédiction académique — au-delà des pays, des filières et des générations.",
+    globalP2:
+      "La performance ne se découvre plus après coup. Elle se prévoit.",
+    ctaTitle: "Partenaires scientifiques & contributeurs précoces",
+    ctaP:
+      "SMAXIA s’ouvre à un cercle limité de partenaires, chercheurs et décideurs stratégiques.",
+    ctaButton: "Demander un accès anticipé",
+    backToTop: "Remonter en haut de page",
+    langFr: "FR",
+    langEn: "EN",
+  },
+} satisfies Record<Lang, any>;
 
-const ROLES = [
-  { value: "Eleve", fr: "Élève / Étudiant", en: "Student" },
-  { value: "Parent", fr: "Parent", en: "Parent" },
-  { value: "Enseignant", fr: "Enseignant", en: "Teacher" },
-  { value: "Chercheur", fr: "Chercheur", en: "Researcher" },
-  { value: "Partenaire", fr: "Partenaire", en: "Partner" },
-];
-
-export default function EarlyAccessPage() {
-  const router = useRouter();
-
-  const [locale, setLocale] = useState<Locale>("fr");
-  const t = useMemo(() => {
-    const fr = {
-      title: "Accès anticipé SMAXIA",
-      subtitle:
-        "Réservé aux élèves ambitieux, enseignants, chercheurs et partenaires stratégiques.",
-      youAre: "VOUS ÊTES",
-      email: "EMAIL PRINCIPAL",
-      org: "ÉTABLISSEMENT / ORGANISATION",
-      msg: "MESSAGE (OPTIONNEL)",
-      msgPh: "Votre objectif, examen, attentes…",
-      emailPh: "prenom.nom@email.com",
-      orgPh: "Lycée, Université, Entreprise…",
-      submit: "Envoyer ma demande",
-      home: "Retour à la page d’accueil",
-      required: "* Champs obligatoires",
-      sending: "Envoi en cours…",
-      sentOk: "Demande envoyée. Merci.",
-      sentErr: "Impossible d’envoyer votre demande. Réessayez dans 30 secondes.",
-      invalidEmail: "Email invalide.",
-      missing: "Veuillez compléter les champs obligatoires.",
-    };
-    const en = {
-      title: "SMAXIA Early Access",
-      subtitle:
-        "Reserved for ambitious students, teachers, researchers and strategic partners.",
-      youAre: "YOU ARE",
-      email: "PRIMARY EMAIL",
-      org: "SCHOOL / ORGANIZATION",
-      msg: "MESSAGE (OPTIONAL)",
-      msgPh: "Your goals, exam, expectations…",
-      emailPh: "name@email.com",
-      orgPh: "High school, University, Company…",
-      submit: "Submit request",
-      home: "Back to home",
-      required: "* Required fields",
-      sending: "Sending…",
-      sentOk: "Request sent. Thank you.",
-      sentErr: "Unable to send. Please retry in 30 seconds.",
-      invalidEmail: "Invalid email.",
-      missing: "Please complete required fields.",
-    };
-    return locale === "fr" ? fr : en;
-  }, [locale]);
-
-  // IMPORTANT: mettez ici le même logo que sur app/page.tsx (landing)
-  // Exemple: "/smaxia-logo.png" ou "/logo.png" selon votre /public
-  const LOGO_SRC = "/smaxia-logo.png";
-
-  const [form, setForm] = useState<FormState>({
-    role: "",
-    email: "",
-    org: "",
-    message: "",
-  });
-
-  const [loading, setLoading] = useState(false);
-  const [okMsg, setOkMsg] = useState<string | null>(null);
-  const [errMsg, setErrMsg] = useState<string | null>(null);
-
-  function set<K extends keyof FormState>(key: K, val: FormState[K]) {
-    setForm((p) => ({ ...p, [key]: val }));
-  }
-
-  function isValidEmail(email: string) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  }
-
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setOkMsg(null);
-    setErrMsg(null);
-
-    const role = form.role.trim();
-    const email = form.email.trim();
-    const org = form.org.trim();
-
-    if (!role || !email || !org) {
-      setErrMsg(t.missing);
-      return;
-    }
-    if (!isValidEmail(email)) {
-      setErrMsg(t.invalidEmail);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const res = await fetch("/api/early-access", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          role,
-          email,
-          org,
-          message: form.message?.trim() || "",
-          locale,
-          source: "smaxia.com/early-access",
-          ts: new Date().toISOString(),
-        }),
-      });
-
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data?.ok) {
-        // message serveur si dispo, sinon message premium standard
-        setErrMsg(data?.error || t.sentErr);
-        return;
-      }
-
-      setOkMsg(t.sentOk);
-      // redirection vers page de succès (si elle existe)
-      router.push("/early-access/success");
-    } catch {
-      setErrMsg(t.sentErr);
-    } finally {
-      setLoading(false);
-    }
-  }
+export default function Home() {
+  const [lang, setLang] = useState<Lang>("fr");
+  const t = copy[lang];
 
   return (
-    <div className="min-h-screen w-full bg-[#05070d] relative overflow-hidden">
-      {/* Premium background */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(900px_500px_at_50%_15%,rgba(77,163,255,0.20),transparent_60%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(700px_420px_at_50%_35%,rgba(242,201,76,0.12),transparent_55%)]" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#05070d] via-[#070b15] to-[#05070d]" />
-      </div>
+    <main className="min-h-screen bg-[#05070d] text-slate-100">
+      {/* HERO */}
+      <section className="relative min-h-[85vh] flex flex-col items-center justify-center text-center px-4 bg-[radial-gradient(circle_at_top,#0c1230_0%,#05070d_60%)]">
+        {/* Toggle FR / EN */}
+        <div className="absolute top-6 right-6 flex gap-2">
+          <button
+            onClick={() => setLang("fr")}
+            className={`px-4 py-1.5 rounded-full text-xs border transition-colors ${
+              lang === "fr"
+                ? "border-amber-400/80 text-amber-300 bg-black/30"
+                : "border-slate-600 text-slate-400 hover:border-slate-300"
+            }`}
+          >
+            {t.langFr}
+          </button>
+          <button
+            onClick={() => setLang("en")}
+            className={`px-4 py-1.5 rounded-full text-xs border transition-colors ${
+              lang === "en"
+                ? "border-amber-400/80 text-amber-300 bg-black/30"
+                : "border-slate-600 text-slate-400 hover:border-slate-300"
+            }`}
+          >
+            {t.langEn}
+          </button>
+        </div>
 
-      {/* Top bar */}
-      <div className="relative z-10 mx-auto max-w-6xl px-6 pt-10">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative h-10 w-10 overflow-hidden rounded-xl ring-1 ring-white/10 bg-white/5">
-              <Image
-                src={LOGO_SRC}
-                alt="SMAXIA"
-                fill
-                className="object-cover"
-                priority
-              />
-            </div>
-            <div className="text-white/90 tracking-[0.22em] font-semibold">
-              SMAXIA
-            </div>
+        {/* Logo + titre */}
+        <Image
+          src="/logo-smaxia.png"
+          alt="SMAXIA Logo"
+          width={320}
+          height={320}
+          priority
+          className="w-[260px] md:w-[320px] mb-8 drop-shadow-[0_0_40px_rgba(242,201,76,0.55)] rounded-xl"
+        />
+
+        <h1 className="text-[3.6rem] md:text-[4rem] tracking-[0.12em] font-semibold mb-4">
+          SMAXIA
+        </h1>
+
+        <h2 className="text-[1.2rem] md:text-[1.35rem] text-slate-300 max-w-xl">
+          {t.heroTagline1}
+          <br />
+          {t.heroTagline2}
+        </h2>
+      </section>
+
+      {/* PROBLEM */}
+      <section className="bg-[#0a0f1f]">
+        <div className="w-[90%] max-w-[1100px] mx-auto py-12 md:py-16">
+          <h3 className="text-[1.9rem] mb-4">
+            {t.problemTitle1}
+            <br />
+            {t.problemTitle2}
+          </h3>
+
+          <p className="text-[1.02rem] text-slate-300 max-w-[800px] mb-3">
+            {t.problemP1}
+          </p>
+          <p className="text-[1.02rem] text-slate-100 font-semibold max-w-[800px]">
+            {t.problemP2}
+          </p>
+        </div>
+      </section>
+
+      {/* WHAT SMAXIA IS */}
+      <section className="bg-[#050915]">
+        <div className="w-[90%] max-w-[1100px] mx-auto py-12 md:py-16">
+          <h3 className="text-[1.9rem] mb-4">{t.whatTitle}</h3>
+
+          <p className="text-[1.02rem] text-slate-300 max-w-[800px] mb-3">
+            {t.whatP1}
+          </p>
+
+          <p className="text-[1.02rem] text-slate-100 font-semibold max-w-[800px]">
+            {t.whatP2}
+          </p>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section className="bg-[#070b1a]">
+        <div className="w-[90%] max-w-[1100px] mx-auto py-12 md:py-16">
+          <h3 className="text-[1.9rem] mb-4">{t.howTitle}</h3>
+
+          <div className="bg-[#050814] rounded-xl p-5 font-mono text-[0.95rem] text-[#cdd6ff] leading-relaxed mb-4">
+            {t.howProcessLines.map((line: string, idx: number) => (
+              <p key={idx}>
+                {idx > 0 && <span className="select-none">↓{" "}</span>}
+                {line}
+              </p>
+            ))}
           </div>
 
-          <div className="flex items-center gap-3">
+          <p className="text-[1.02rem] text-slate-300 max-w-[800px]">
+            {t.howP}
+          </p>
+        </div>
+      </section>
+
+      {/* WHY DIFFERENT */}
+      <section className="bg-[#050915]">
+        <div className="w-[90%] max-w-[1100px] mx-auto py-12 md:py-16">
+          <h3 className="text-[1.9rem] mb-4">{t.whyTitle}</h3>
+          <ul className="list-disc list-inside text-[1.02rem] text-slate-300 max-w-[800px] mb-3 space-y-1">
+            {t.whyBullets.map((item: string, idx: number) => (
+              <li key={idx}>{item}</li>
+            ))}
+          </ul>
+          <p className="text-[1.02rem] text-slate-100 font-semibold max-w-[800px]">
+            {t.whyHighlight}
+          </p>
+        </div>
+      </section>
+
+      {/* WHO FOR */}
+      <section className="bg-[#070b1a]">
+        <div className="w-[90%] max-w-[1100px] mx-auto py-12 md:py-16">
+          <h3 className="text-[1.9rem] mb-4">{t.whoTitle}</h3>
+          <ul className="list-disc list-inside text-[1.02rem] text-slate-300 max-w-[800px] space-y-1">
+            {t.whoBullets.map((item: string, idx: number) => (
+              <li key={idx}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {/* GLOBAL STANDARD */}
+      <section className="bg-[#050915]">
+        <div className="w-[90%] max-w-[1100px] mx-auto py-12 md:py-16">
+          <h3 className="text-[1.9rem] mb-4">{t.globalTitle}</h3>
+          <p className="text-[1.02rem] text-slate-300 max-w-[800px] mb-3">
+            {t.globalP1}
+          </p>
+          <p className="text-[1.02rem] text-slate-100 font-semibold max-w-[800px]">
+            {t.globalP2}
+          </p>
+        </div>
+      </section>
+
+      {/* CTA – bouton doré vers /early-access */}
+      <section className="bg-[#05070d]">
+        <div className="w-[90%] max-w-[1100px] mx-auto py-16 text-center">
+          <h3 className="text-[1.9rem] mb-4">{t.ctaTitle}</h3>
+          <p className="text-[1.02rem] text-slate-300 max-w-[700px] mx-auto mb-8">
+            {t.ctaP}
+          </p>
+
+          <Link href="/early-access">
             <button
-              type="button"
-              onClick={() => setLocale("fr")}
-              className={`h-11 w-14 rounded-full border text-sm font-semibold transition ${
-                locale === "fr"
-                  ? "bg-[#f2c94c] text-[#05070d] border-[#f2c94c] shadow-[0_0_35px_rgba(242,201,76,0.18)]"
-                  : "bg-transparent text-white/80 border-white/15 hover:border-white/25"
-              }`}
-              aria-label="FR"
+              className="
+                mt-2 inline-flex items-center justify-center
+                rounded-full border border-[#f2c94c]/80
+                px-10 py-3 text-sm font-medium
+                text-[#f2c94c]
+                shadow-[0_0_25px_rgba(242,201,76,0.45)]
+                hover:bg-[#f2c94c] hover:text-black
+                transition-colors duration-200
+              "
             >
-              FR
+              {t.ctaButton}
             </button>
-            <button
-              type="button"
-              onClick={() => setLocale("en")}
-              className={`h-11 w-14 rounded-full border text-sm font-semibold transition ${
-                locale === "en"
-                  ? "bg-[#f2c94c] text-[#05070d] border-[#f2c94c] shadow-[0_0_35px_rgba(242,201,76,0.18)]"
-                  : "bg-transparent text-white/80 border-white/15 hover:border-white/25"
-              }`}
-              aria-label="EN"
-            >
-              EN
-            </button>
-          </div>
+          </Link>
         </div>
-      </div>
+      </section>
 
-      {/* Card */}
-      <div className="relative z-10 mx-auto max-w-3xl px-6 pb-16 pt-10">
-        <div className="rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl shadow-[0_30px_120px_rgba(0,0,0,0.55)]">
-          <div className="px-8 py-8 sm:px-10 sm:py-10">
-            <h1 className="text-3xl sm:text-4xl font-semibold text-white/95">
-              {t.title}
-            </h1>
-            <p className="mt-2 text-white/70">{t.subtitle}</p>
-
-            <form onSubmit={onSubmit} className="mt-8 space-y-6">
-              <div>
-                <div className="text-xs tracking-[0.24em] text-white/60">
-                  {t.youAre} <span className="text-[#f2c94c]">*</span>
-                </div>
-                <select
-                  value={form.role}
-                  onChange={(e) => set("role", e.target.value)}
-                  className="mt-2 w-full rounded-2xl border border-white/10 bg-[#070b15]/60 px-5 py-4 text-white/90 outline-none focus:border-white/20"
-                >
-                  <option value="" className="text-black">
-                    {locale === "fr" ? "Sélectionner…" : "Select…"}
-                  </option>
-                  {ROLES.map((r) => (
-                    <option key={r.value} value={r.value} className="text-black">
-                      {locale === "fr" ? r.fr : r.en}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <div className="text-xs tracking-[0.24em] text-white/60">
-                  {t.email} <span className="text-[#f2c94c]">*</span>
-                </div>
-                <input
-                  value={form.email}
-                  onChange={(e) => set("email", e.target.value)}
-                  placeholder={t.emailPh}
-                  className="mt-2 w-full rounded-2xl border border-white/10 bg-[#070b15]/60 px-5 py-4 text-white/90 placeholder:text-white/30 outline-none focus:border-white/20"
-                  inputMode="email"
-                  autoComplete="email"
-                />
-              </div>
-
-              <div>
-                <div className="text-xs tracking-[0.24em] text-white/60">
-                  {t.org} <span className="text-[#f2c94c]">*</span>
-                </div>
-                <input
-                  value={form.org}
-                  onChange={(e) => set("org", e.target.value)}
-                  placeholder={t.orgPh}
-                  className="mt-2 w-full rounded-2xl border border-white/10 bg-[#070b15]/60 px-5 py-4 text-white/90 placeholder:text-white/30 outline-none focus:border-white/20"
-                  autoComplete="organization"
-                />
-              </div>
-
-              <div>
-                <div className="text-xs tracking-[0.24em] text-white/60">
-                  {t.msg}
-                </div>
-                <textarea
-                  value={form.message}
-                  onChange={(e) => set("message", e.target.value)}
-                  placeholder={t.msgPh}
-                  rows={5}
-                  className="mt-2 w-full resize-none rounded-2xl border border-white/10 bg-[#070b15]/60 px-5 py-4 text-white/90 placeholder:text-white/30 outline-none focus:border-white/20"
-                />
-              </div>
-
-              {/* Status */}
-              {errMsg && (
-                <div className="rounded-2xl border border-red-500/25 bg-red-500/10 px-5 py-4 text-sm text-red-200">
-                  {errMsg}
-                </div>
-              )}
-              {okMsg && (
-                <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-5 py-4 text-sm text-emerald-200">
-                  {okMsg}
-                </div>
-              )}
-
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className={`w-full rounded-full border px-6 py-4 text-base font-semibold transition ${
-                    loading
-                      ? "cursor-not-allowed border-white/10 bg-white/5 text-white/50"
-                      : "border-[#f2c94c]/45 bg-transparent text-[#f2c94c] hover:border-[#f2c94c] hover:bg-[#f2c94c]/10 shadow-[0_0_60px_rgba(242,201,76,0.10)]"
-                  }`}
-                >
-                  {loading ? t.sending : t.submit}
-                </button>
-
-                <div className="mt-3 text-center text-xs text-white/40">
-                  {t.required}
-                </div>
-
-                <div className="mt-6 text-center">
-                  <a
-                    href="/"
-                    className="text-sm text-white/60 hover:text-white/85 transition"
-                  >
-                    {t.home}
-                  </a>
-                </div>
-              </div>
-            </form>
-          </div>
+      {/* FOOTER */}
+      <footer className="bg-black/60 border-t border-slate-800 py-6 text-center text-xs text-slate-500">
+        <div className="flex flex-col items-center gap-2">
+          <span>SMAXIA · Predictive Intelligence Engine · 2025</span>
+          <a
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className="text-[0.7rem] text-slate-400 hover:text-slate-200 underline underline-offset-2"
+          >
+            {t.backToTop}
+          </a>
         </div>
-
-        {/* Footer subtle */}
-        <div className="mt-8 text-center text-xs text-white/25">
-          SMAXIA · Predictive Intelligence Engine · {new Date().getFullYear()}
-        </div>
-      </div>
-    </div>
+      </footer>
+    </main>
   );
 }
