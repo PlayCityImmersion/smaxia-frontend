@@ -1,287 +1,195 @@
-"use client";
-
-import { useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
-
-type Lang = "fr" | "en";
-
-const TEXTS: Record<
-  Lang,
-  {
-    langLabel: string;
-    pageTitle: string;
-    pageSubtitle: string;
-    roleLabel: string;
-    rolePlaceholder: string;
-    roles: { value: string; label: string }[];
-    emailLabel: string;
-    orgLabel: string;
-    orgPlaceholder: string;
-    addMessageToggle: string;
-    messageLabel: string;
-    messagePlaceholder: string;
-    submitLabel: string;
-    backHome: string;
-    errorRequired: string;
-    mailSubject: string;
-  }
-> = {
-  fr: {
-    langLabel: "FR",
-    pageTitle: "Accès anticipé SMAXIA",
-    pageSubtitle:
-      "Réservé aux élèves ambitieux, enseignants, chercheurs et partenaires stratégiques.",
-    roleLabel: "Vous êtes",
-    rolePlaceholder: "Sélectionnez votre profil",
-    roles: [
-      { value: "student", label: "Élève / Étudiant" },
-      { value: "parent", label: "Parent" },
-      { value: "teacher", label: "Enseignant / Professeur" },
-      { value: "institution", label: "Établissement / Responsable pédagogique" },
-      { value: "researcher", label: "Chercheur / Expert" },
-      { value: "investor", label: "Investisseur / Partenaire" },
-    ],
-    emailLabel: "Email principal",
-    orgLabel: "Établissement / Organisation",
-    orgPlaceholder: "Ex. Lycée Hoche, Université Paris-Saclay, Fonds d’investissement…",
-    addMessageToggle: "Ajouter un message (optionnel)",
-    messageLabel: "Message (optionnel)",
-    messagePlaceholder:
-      "En quelques lignes : votre contexte, vos attentes ou votre intérêt pour SMAXIA.",
-    submitLabel: "Envoyer ma demande",
-    backHome: "Retour à la page d’accueil",
-    errorRequired: "Merci de renseigner tous les champs obligatoires.",
-    mailSubject: "Demande d’accès anticipé SMAXIA",
-  },
-  en: {
-    langLabel: "EN",
-    pageTitle: "SMAXIA Early Access",
-    pageSubtitle:
-      "Reserved for ambitious students, educators, researchers and strategic partners.",
-    roleLabel: "You are",
-    rolePlaceholder: "Select your profile",
-    roles: [
-      { value: "student", label: "Student" },
-      { value: "parent", label: "Parent" },
-      { value: "teacher", label: "Teacher / Professor" },
-      { value: "institution", label: "School / Academic institution" },
-      { value: "researcher", label: "Researcher / Expert" },
-      { value: "investor", label: "Investor / Partner" },
-    ],
-    emailLabel: "Primary email",
-    orgLabel: "School / Organization",
-    orgPlaceholder: "e.g. Lycée Hoche, University of Oxford, Investment fund…",
-    addMessageToggle: "Add a short message (optional)",
-    messageLabel: "Message (optional)",
-    messagePlaceholder:
-      "In a few lines: your context, expectations or interest in SMAXIA.",
-    submitLabel: "Send my request",
-    backHome: "Back to homepage",
-    errorRequired: "Please fill in all required fields.",
-    mailSubject: "SMAXIA Early Access Request",
-  },
-};
-
 export default function EarlyAccessPage() {
-  const [lang, setLang] = useState<Lang>("fr");
-  const t = TEXTS[lang];
-
-  const [role, setRole] = useState("");
-  const [email, setEmail] = useState("");
-  const [organisation, setOrganisation] = useState("");
-  const [showMessage, setShowMessage] = useState(false);
-  const [message, setMessage] = useState("");
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!role || !email || !organisation) {
-      alert(t.errorRequired);
-      return;
-    }
-
-    const subject = encodeURIComponent(t.mailSubject);
-
-    const lines = [
-      `Lang: ${lang.toUpperCase()}`,
-      `Role / Profil: ${
-        t.roles.find((r) => r.value === role)?.label || role
-      }`,
-      `Email: ${email}`,
-      `Organisation: ${organisation}`,
-      message
-        ? `Message:\n${message}`
-        : lang === "fr"
-        ? "Message: (non renseigné)"
-        : "Message: (not provided)",
-    ];
-
-    const body = encodeURIComponent(lines.join("\n\n"));
-
-    // Ouvre le client mail local avec un email pré-rempli vers ton adresse pro
-    window.location.href = `mailto:alexis.zahbi@smaxia.com?subject=${subject}&body=${body}`;
-  };
-
   return (
-    <main className="min-h-screen bg-[#05070d] text-slate-100">
-      {/* HEADER / LANG SWITCH */}
-      <header className="w-full border-b border-slate-800/60 bg-black/20">
-        <div className="max-w-5xl mx-auto flex items-center justify-between px-4 py-3">
-          <Link href="/" className="flex items-center gap-3">
-            <Image
-              src="/logo-smaxia.png"
-              alt="SMAXIA Logo"
-              width={40}
-              height={40}
-              className="rounded-lg"
-            />
-            <span className="text-sm tracking-[0.18em] text-slate-300">
-              SMAXIA
-            </span>
-          </Link>
-
-          <div className="flex items-center gap-2 text-xs">
-            <button
-              type="button"
-              onClick={() => setLang("fr")}
-              className={`px-2 py-1 rounded-full border ${
-                lang === "fr"
-                  ? "border-amber-400 text-amber-300 bg-amber-400/10"
-                  : "border-slate-700 text-slate-400 hover:border-slate-400"
-              }`}
-            >
-              FR
-            </button>
-            <button
-              type="button"
-              onClick={() => setLang("en")}
-              className={`px-2 py-1 rounded-full border ${
-                lang === "en"
-                  ? "border-amber-400 text-amber-300 bg-amber-400/10"
-                  : "border-slate-700 text-slate-400 hover:border-slate-400"
-              }`}
-            >
-              EN
-            </button>
+    <>
+      <main className="wrap">
+        <header className="top">
+          <div className="brand">
+            <img className="logo" src="/smaxia-logo.png" alt="SMAXIA" />
+            <span className="name">SMAXIA</span>
           </div>
-        </div>
-      </header>
 
-      {/* CONTENT */}
-      <section className="max-w-5xl mx-auto px-4 py-10 md:py-14">
-        {/* TITLE BLOCK */}
-        <div className="mb-10 text-center">
-          <h1 className="text-2xl md:text-3xl font-semibold tracking-wide mb-3">
-            {t.pageTitle}
-          </h1>
-          <p className="text-sm md:text-base text-slate-400 max-w-2xl mx-auto">
-            {t.pageSubtitle}
+          <div className="lang">
+            <span className="pill active">FR</span>
+            <span className="pill">EN</span>
+          </div>
+        </header>
+
+        <section className="card">
+          <h1>Accès anticipé SMAXIA</h1>
+          <p className="sub">
+            Réservé aux élèves ambitieux, enseignants, chercheurs et partenaires stratégiques.
           </p>
-        </div>
 
-        {/* FORM CARD */}
-        <div className="max-w-xl mx-auto bg-[#050914] border border-slate-800/80 rounded-2xl px-5 py-7 md:px-7 md:py-8 shadow-[0_0_40px_rgba(15,23,42,0.9)]">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* ROLE */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-[0.16em]">
-                {t.roleLabel} <span className="text-amber-400">*</span>
-              </label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="w-full bg-black/40 border border-slate-700 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/60"
-              >
-                <option value="">{t.rolePlaceholder}</option>
-                {t.roles.map((r) => (
-                  <option key={r.value} value={r.value}>
-                    {r.label}
-                  </option>
-                ))}
+          {/* FORMULAIRE : POST (aucun mailto) */}
+          <form
+            className="form"
+            action="https://formsubmit.co/alexis.zahbi@smaxia.com"
+            method="POST"
+          >
+            {/* Paramètres FormSubmit */}
+            <input type="hidden" name="_subject" value="SMAXIA — Nouvelle demande d’accès anticipé" />
+            <input type="hidden" name="_captcha" value="false" />
+            <input type="hidden" name="_template" value="table" />
+            <input type="hidden" name="_next" value="https://smaxia.com/early-access/success" />
+
+            <div className="field">
+              <label>VOUS ÊTES *</label>
+              <select name="profil" required defaultValue="">
+                <option value="" disabled>Sélectionner…</option>
+                <option value="Élève / Étudiant">Élève / Étudiant</option>
+                <option value="Parent">Parent</option>
+                <option value="Enseignant / Professeur">Enseignant / Professeur</option>
+                <option value="Chercheur">Chercheur</option>
+                <option value="Institution / Partenaire">Institution / Partenaire</option>
+                <option value="Autre">Autre</option>
               </select>
             </div>
 
-            {/* EMAIL */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-[0.16em]">
-                {t.emailLabel} <span className="text-amber-400">*</span>
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-black/40 border border-slate-700 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/60"
-                placeholder="you@email.com"
-              />
+            <div className="field">
+              <label>EMAIL PRINCIPAL *</label>
+              <input type="email" name="email" required placeholder="prenom.nom@gmail.com" />
             </div>
 
-            {/* ORGANISATION */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-[0.16em]">
-                {t.orgLabel} <span className="text-amber-400">*</span>
-              </label>
-              <input
-                type="text"
-                value={organisation}
-                onChange={(e) => setOrganisation(e.target.value)}
-                className="w-full bg-black/40 border border-slate-700 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/60"
-                placeholder={t.orgPlaceholder}
-              />
+            <div className="field">
+              <label>ÉTABLISSEMENT / ORGANISATION *</label>
+              <input type="text" name="organisation" required placeholder="Lycée, Université, Entreprise…" />
             </div>
 
-            {/* TOGGLE MESSAGE */}
-            <button
-              type="button"
-              onClick={() => setShowMessage((prev) => !prev)}
-              className="text-[0.75rem] text-slate-400 underline underline-offset-4 hover:text-slate-200"
-            >
-              {t.addMessageToggle}
-            </button>
-
-            {/* OPTIONAL MESSAGE */}
-            {showMessage && (
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-[0.16em]">
-                  {t.messageLabel}
-                </label>
-                <textarea
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  rows={4}
-                  className="w-full bg-black/40 border border-slate-700 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/60 resize-none"
-                  placeholder={t.messagePlaceholder}
-                />
-              </div>
-            )}
-
-            {/* SUBMIT */}
-            <div className="pt-2">
-              <button
-                type="submit"
-                className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-amber-400/80 px-5 py-2.5 text-sm font-medium text-amber-200 bg-gradient-to-r from-amber-500/10 to-yellow-400/5 hover:from-amber-400/30 hover:to-yellow-300/20 hover:border-amber-300 transition-all shadow-[0_0_25px_rgba(250,204,21,0.25)]"
-              >
-                {t.submitLabel}
-              </button>
+            <div className="field">
+              <label>MESSAGE (OPTIONNEL)</label>
+              <textarea name="message" rows={4} placeholder="Votre objectif, examen, attentes…" />
             </div>
+
+            <button className="btn" type="submit">Envoyer ma demande</button>
+
+            <a className="back" href="/">Retour à la page d’accueil</a>
           </form>
-        </div>
+        </section>
+      </main>
 
-        {/* BACK LINK */}
-        <div className="mt-6 text-center">
-          <Link
-            href="/"
-            className="text-xs text-slate-500 hover:text-slate-200 underline underline-offset-4"
-          >
-            {t.backHome}
-          </Link>
-        </div>
-      </section>
+      <style jsx global>{`
+        :root{
+          --bg:#05070d;
+          --panel:#070b1a;
+          --panel2:#0a0f1f;
+          --text:#e6ebff;
+          --muted:#9aa4c7;
+          --gold:#f2c94c;
+          --blue:#4da3ff;
+          --border: rgba(148,163,184,.18);
+        }
+        html,body{height:100%}
+        body{
+          margin:0;
+          font-family: Inter, "Segoe UI", Arial, sans-serif;
+          background: radial-gradient(circle at top, #0c1230 0%, #05070d 60%);
+          color: var(--text);
+        }
+        .wrap{
+          min-height:100vh;
+          padding: 22px 16px 60px;
+          display:flex;
+          flex-direction:column;
+          align-items:center;
+        }
+        .top{
+          width:min(980px, 100%);
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          padding: 10px 6px 22px;
+        }
+        .brand{
+          display:flex; gap:10px; align-items:center;
+        }
+        .logo{
+          width:28px; height:28px; border-radius:6px;
+          object-fit:cover;
+          filter: drop-shadow(0 0 20px rgba(242,201,76,.35));
+        }
+        .name{
+          letter-spacing:.25em;
+          font-weight:700;
+          font-size:.95rem;
+          opacity:.92;
+        }
+        .lang{display:flex; gap:10px;}
+        .pill{
+          border:1px solid rgba(242,201,76,.45);
+          padding:6px 12px;
+          border-radius:999px;
+          font-size:.85rem;
+          opacity:.75;
+        }
+        .pill.active{
+          background: rgba(242,201,76,.10);
+          opacity:1;
+        }
 
-      {/* FOOTER */}
-      <footer className="bg-black/60 border-t border-slate-800 py-6 text-center text-[0.7rem] text-slate-500">
-        SMAXIA · Predictive Intelligence Engine · 2025
-      </footer>
-    </main>
+        .card{
+          width:min(740px, 100%);
+          background: radial-gradient(circle at top, #111735 0%, #05070d 70%);
+          border:1px solid var(--border);
+          border-radius: 16px;
+          box-shadow: 0 24px 60px rgba(0,0,0,.65);
+          padding: 26px 22px 22px;
+        }
+        h1{
+          margin:0 0 6px;
+          font-size: 2.0rem;
+          letter-spacing:.02em;
+        }
+        .sub{
+          margin:0 0 18px;
+          color: var(--muted);
+        }
+        .form{display:grid; gap:14px;}
+        .field label{
+          display:block;
+          font-size:.80rem;
+          letter-spacing:.18em;
+          color: var(--muted);
+          margin: 0 0 8px;
+        }
+        input, select, textarea{
+          width:100%;
+          padding: 12px 12px;
+          border-radius: 12px;
+          border:1px solid rgba(148,163,184,.35);
+          background: rgba(15,23,42,.9);
+          color: var(--text);
+          outline:none;
+          font-size: 1rem;
+        }
+        input:focus, select:focus, textarea:focus{
+          border-color: var(--blue);
+          box-shadow: 0 0 0 1px rgba(77,163,255,.35);
+          background:#020617;
+        }
+        textarea{resize:vertical; min-height:110px;}
+        .btn{
+          margin-top: 6px;
+          padding: 12px 18px;
+          border-radius: 999px;
+          border: 1px solid rgba(242,201,76,.55);
+          background: rgba(0,0,0,.25);
+          color: var(--gold);
+          font-weight: 700;
+          cursor:pointer;
+          box-shadow: 0 16px 40px rgba(0,0,0,.35);
+        }
+        .btn:hover{
+          filter: brightness(1.05);
+          transform: translateY(-1px);
+        }
+        .back{
+          text-align:center;
+          color: var(--muted);
+          text-decoration: underline;
+          font-size: .95rem;
+          padding-top: 6px;
+        }
+      `}</style>
+    </>
   );
 }
