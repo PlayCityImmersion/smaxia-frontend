@@ -1,15 +1,20 @@
 export default function SuccessPage() {
   return (
-    <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: 24 }}>
-      <div style={{ maxWidth: 720 }}>
-        <h1 style={{ fontSize: "2rem", marginBottom: 10 }}>Demande envoyée</h1>
-        <p style={{ opacity: 0.85, lineHeight: 1.6 }}>
-          Merci. Votre demande d’accès anticipé a bien été transmise.
+    <div className="min-h-screen bg-[#05070d] flex items-center justify-center px-6">
+      <div className="max-w-xl w-full rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-10 text-center">
+        <h1 className="text-3xl font-semibold text-white/95">SMAXIA</h1>
+        <p className="mt-4 text-white/70">
+          Votre demande d’accès anticipé a été transmise.
         </p>
-        <div style={{ marginTop: 18 }}>
-          <a href="/" style={{ textDecoration: "underline" }}>Retour à la page d’accueil</a>
+        <div className="mt-8">
+          <a
+            href="/"
+            className="inline-flex items-center justify-center rounded-full border border-[#f2c94c]/45 px-6 py-3 text-[#f2c94c] hover:border-[#f2c94c] hover:bg-[#f2c94c]/10 transition"
+          >
+            Retour à l’accueil
+          </a>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
