@@ -1,478 +1,355 @@
 "use client";
 
+import Image from "next/image";
+import Link from "next/link";
 import React, { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 
 type Lang = "fr" | "en";
 
-type FormState = {
-  role: string;
-  email: string;
-  org: string;
-  message: string;
+const LOGO_SRC = "/smaxia-logo.svg"; // <-- mettez ici EXACTEMENT le logo utilisé sur la Landing
+
+const COPY: Record<Lang, any> = {
+  fr: {
+    title: "Accès anticipé SMAXIA",
+    subtitle:
+      "Réservé aux élèves ambitieux, enseignants, chercheurs et partenaires stratégiques.",
+    youAre: "VOUS ÊTES",
+    select: "Sélectionner…",
+    email: "EMAIL PRINCIPAL",
+    org: "ÉTABLISSEMENT / ORGANISATION",
+    optional: "Ajouter un message (optionnel)",
+    msgPh: "Votre objectif, examen, attentes…",
+    emailPh: "prenom.nom@email.com",
+    orgPh: "Lycée, Université, Entreprise…",
+    submit: "Envoyer ma demande",
+    sending: "Envoi en cours…",
+    backHome: "Retour à la page d’accueil",
+    requiredNote: "* Champs obligatoires",
+    roles: [
+      { value: "", label: "Sélectionner…" },
+      { value: "eleve", label: "Élève / Étudiant" },
+      { value: "parent", label: "Parent" },
+      { value: "enseignant", label: "Enseignant" },
+      { value: "chercheur", label: "Chercheur" },
+      { value: "partenaire", label: "Partenaire" },
+      { value: "presse", label: "Presse / Média" },
+    ],
+    errors: {
+      required: "Veuillez renseigner tous les champs obligatoires.",
+      email: "Adresse email invalide.",
+      generic: "Impossible d’envoyer votre demande. Réessayez dans 30 secondes.",
+    },
+  },
+  en: {
+    title: "SMAXIA Early Access",
+    subtitle:
+      "Reserved for ambitious students, educators, researchers, and strategic partners.",
+    youAre: "YOU ARE",
+    select: "Select…",
+    email: "PRIMARY EMAIL",
+    org: "SCHOOL / ORGANIZATION",
+    optional: "Add a message (optional)",
+    msgPh: "Your goal, exam, expectations…",
+    emailPh: "name@email.com",
+    orgPh: "High school, University, Company…",
+    submit: "Submit request",
+    sending: "Submitting…",
+    backHome: "Back to home",
+    requiredNote: "* Required fields",
+    roles: [
+      { value: "", label: "Select…" },
+      { value: "student", label: "Student" },
+      { value: "parent", label: "Parent" },
+      { value: "teacher", label: "Teacher" },
+      { value: "researcher", label: "Researcher" },
+      { value: "partner", label: "Partner" },
+      { value: "press", label: "Press / Media" },
+    ],
+    errors: {
+      required: "Please fill in all required fields.",
+      email: "Invalid email address.",
+      generic: "Unable to submit. Please retry in 30 seconds.",
+    },
+  },
 };
 
+function isValidEmail(v: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+}
+
 export default function EarlyAccessPage() {
-  const router = useRouter();
   const [lang, setLang] = useState<Lang>("fr");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>("");
-  const [state, setState] = useState<FormState>({
-    role: "",
-    email: "",
-    org: "",
-    message: "",
-  });
+  const t = useMemo(() => COPY[lang], [lang]);
 
-  const t = useMemo(() => {
-    const FR = {
-      title: "Accès anticipé SMAXIA",
-      subtitle:
-        "Réservé aux élèves ambitieux, enseignants, chercheurs et partenaires stratégiques.",
-      youAre: "Vous êtes",
-      select: "Sélectionner…",
-      roles: {
-        student: "Élève / Étudiant",
-        parent: "Parent",
-        teacher: "Enseignant / Professeur",
-        school: "École / Institution",
-        other: "Autre",
-      },
-      email: "Email principal",
-      org: "Établissement / Organisation",
-      orgPh: "Lycée, Université, Entreprise…",
-      msg: "Message (optionnel)",
-      msgPh: "Votre objectif, examen, attentes…",
-      send: "Envoyer ma demande",
-      sending: "Envoi en cours…",
-      required: "* Champs obligatoires",
-      backHome: "Retour à la page d’accueil",
-      errors: {
-        required: "Merci de renseigner les champs obligatoires.",
-        invalidEmail: "Adresse email invalide.",
-        generic: "Impossible d’envoyer votre demande. Réessayez dans 30 secondes.",
-      },
-    };
+  const [role, setRole] = useState("");
+  const [email, setEmail] = useState("");
+  const [org, setOrg] = useState("");
+  const [message, setMessage] = useState("");
+  const [showOptional, setShowOptional] = useState(false);
 
-    const EN = {
-      title: "SMAXIA Early Access",
-      subtitle:
-        "Reserved for ambitious students, teachers, researchers and strategic partners.",
-      youAre: "You are",
-      select: "Select…",
-      roles: {
-        student: "Student",
-        parent: "Parent",
-        teacher: "Teacher / Professor",
-        school: "School / Institution",
-        other: "Other",
-      },
-      email: "Primary email",
-      org: "School / Organization",
-      orgPh: "High school, University, Company…",
-      msg: "Message (optional)",
-      msgPh: "Your goal, exam, expectations…",
-      send: "Submit my request",
-      sending: "Sending…",
-      required: "* Required fields",
-      backHome: "Back to homepage",
-      errors: {
-        required: "Please fill in the required fields.",
-        invalidEmail: "Invalid email address.",
-        generic: "Unable to submit your request. Please try again in 30 seconds.",
-      },
-    };
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    return lang === "fr" ? FR : EN;
-  }, [lang]);
-
-  const onChange =
-    (key: keyof FormState) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-      setError("");
-      setState((s) => ({ ...s, [key]: e.target.value }));
-    };
-
-  const isValidEmail = (email: string) => {
-    // simple + robust enough for frontend validation
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  };
-
-  const submit = async (e: React.FormEvent) => {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
+    setError(null);
 
-    const role = state.role.trim();
-    const email = state.email.trim();
-    const org = state.org.trim();
+    const _email = email.trim();
+    const _org = org.trim();
 
-    if (!role || !email || !org) {
-      setError(t.errors.required);
-      return;
-    }
-    if (!isValidEmail(email)) {
-      setError(t.errors.invalidEmail);
-      return;
-    }
+    if (!role || !_email || !_org) return setError(t.errors.required);
+    if (!isValidEmail(_email)) return setError(t.errors.email);
 
-    setLoading(true);
+    setSubmitting(true);
     try {
       const res = await fetch("/api/early-access", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // IMPORTANT: no mailto, no external action
         body: JSON.stringify({
-          role,
-          email,
-          org,
-          message: state.message?.trim() || "",
           lang,
-          pageUrl: typeof window !== "undefined" ? window.location.href : "",
-          ts: new Date().toISOString(),
+          role,
+          email: _email,
+          organisation: _org,
+          message: showOptional ? (message?.trim() || "") : "",
+          source: "early-access",
         }),
       });
 
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || t.errors.generic);
 
-      router.push("/early-access/success");
-    } catch (_err) {
-      setError(t.errors.generic);
+      window.location.href = "/early-access/success";
+    } catch (err: any) {
+      setError(err?.message || t.errors.generic);
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
-  };
+  }
 
   return (
-    <main className="page">
-      {/* Top bar */}
-      <header className="topbar">
-        <div className="brand">
-          {/* Remplacez le src si votre logo est ailleurs */}
-          <img className="logo" src="/smaxia-logo.png" alt="SMAXIA" />
-          <span className="brandName">SMAXIA</span>
-        </div>
+    <main className="min-h-screen bg-[#05070d] text-[#e6ebff] overflow-x-hidden">
+      {/* Premium background */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-0 bg-[radial-gradient(1200px_650px_at_50%_0%,rgba(77,163,255,0.20),transparent_55%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(900px_520px_at_86%_28%,rgba(242,201,76,0.12),transparent_55%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(900px_520px_at_14%_78%,rgba(77,163,255,0.10),transparent_55%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.0),rgba(0,0,0,0.55))]" />
+      </div>
 
-        <div className="lang">
+      {/* Top bar (small language chips) */}
+      <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-end px-6 pt-6">
+        <div className="flex items-center gap-2">
           <button
             type="button"
-            className={`langBtn ${lang === "fr" ? "active" : ""}`}
             onClick={() => setLang("fr")}
             aria-pressed={lang === "fr"}
+            className={[
+              "h-9 rounded-full px-4 text-[11px] font-semibold tracking-[0.24em] transition",
+              "border",
+              lang === "fr"
+                ? "bg-[#f2c94c] text-[#05070d] border-[#f2c94c]/40 shadow-[0_18px_45px_rgba(242,201,76,0.12)]"
+                : "bg-white/5 text-[#e6ebff] border-white/12 hover:bg-white/8",
+            ].join(" ")}
           >
             FR
           </button>
           <button
             type="button"
-            className={`langBtn ${lang === "en" ? "active" : ""}`}
             onClick={() => setLang("en")}
             aria-pressed={lang === "en"}
+            className={[
+              "h-9 rounded-full px-4 text-[11px] font-semibold tracking-[0.24em] transition",
+              "border",
+              lang === "en"
+                ? "bg-[#f2c94c] text-[#05070d] border-[#f2c94c]/40 shadow-[0_18px_45px_rgba(242,201,76,0.12)]"
+                : "bg-white/5 text-[#e6ebff] border-white/12 hover:bg-white/8",
+            ].join(" ")}
           >
             EN
           </button>
         </div>
       </header>
 
-      <section className="wrap">
-        <div className="card">
-          <h1 className="title">{t.title}</h1>
-          <p className="subtitle">{t.subtitle}</p>
-
-          <form className="form" onSubmit={submit} noValidate>
-            <div className="grid">
-              <div className="field full">
-                <label className="label">
-                  {t.youAre} <span className="req">*</span>
-                </label>
-                <select className="control" value={state.role} onChange={onChange("role")} required>
-                  <option value="">{t.select}</option>
-                  <option value="student">{t.roles.student}</option>
-                  <option value="parent">{t.roles.parent}</option>
-                  <option value="teacher">{t.roles.teacher}</option>
-                  <option value="school">{t.roles.school}</option>
-                  <option value="other">{t.roles.other}</option>
-                </select>
-              </div>
-
-              <div className="field full">
-                <label className="label">
-                  {t.email} <span className="req">*</span>
-                </label>
-                <input
-                  className="control"
-                  type="email"
-                  value={state.email}
-                  onChange={onChange("email")}
-                  placeholder="prenom.nom@email.com"
-                  autoComplete="email"
-                  required
+      {/* Card */}
+      <section className="relative z-10 mx-auto w-full max-w-3xl px-6 pb-10 pt-7">
+        <div
+          className={[
+            "rounded-[30px] border border-white/10 bg-white/[0.035] backdrop-blur-xl",
+            "shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_40px_110px_rgba(0,0,0,0.70)]",
+            "overflow-hidden",
+          ].join(" ")}
+        >
+          {/* Scrollable body (button always visible) */}
+          <div className="max-h-[calc(100vh-190px)] overflow-y-auto px-7 sm:px-10 pt-9 sm:pt-10 pb-6">
+            {/* Centered logo like Landing */}
+            <div className="flex flex-col items-center text-center select-none">
+              <div className="relative h-14 w-14 sm:h-16 sm:w-16">
+                <Image
+                  src={LOGO_SRC}
+                  alt="SMAXIA"
+                  fill
+                  priority
+                  sizes="64px"
+                  className="object-contain drop-shadow-[0_12px_30px_rgba(77,163,255,0.16)]"
                 />
               </div>
-
-              <div className="field full">
-                <label className="label">
-                  {t.org} <span className="req">*</span>
-                </label>
-                <input
-                  className="control"
-                  type="text"
-                  value={state.org}
-                  onChange={onChange("org")}
-                  placeholder={t.orgPh}
-                  autoComplete="organization"
-                  required
-                />
-              </div>
-
-              <div className="field full">
-                <label className="label">{t.msg}</label>
-                <textarea
-                  className="control textarea"
-                  value={state.message}
-                  onChange={onChange("message")}
-                  placeholder={t.msgPh}
-                />
+              <div className="mt-3 text-sm tracking-[0.34em] text-[#9aa4c7]">
+                SMAXIA
               </div>
             </div>
 
-            {error ? (
-              <div className="alert" role="alert">
-                {error}
+            <div className="mt-7">
+              <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight text-center">
+                {t.title}
+              </h1>
+              <p className="mt-3 text-base sm:text-lg text-[#9aa4c7] text-center">
+                {t.subtitle}
+              </p>
+            </div>
+
+            <form onSubmit={onSubmit} className="mt-9 space-y-5">
+              {/* Role */}
+              <div>
+                <label className="block text-[11px] tracking-[0.28em] text-[#9aa4c7]">
+                  {t.youAre} <span className="text-[#f2c94c]">*</span>
+                </label>
+                <div className="mt-2">
+                  <select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    className="w-full rounded-2xl border border-white/10 bg-[#0a0f1f]/70 px-4 py-3 text-sm outline-none transition focus:border-[#4da3ff]/45 focus:ring-2 focus:ring-[#4da3ff]/20"
+                  >
+                    {t.roles.map((r: any) => (
+                      <option key={r.value} value={r.value}>
+                        {r.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-            ) : null}
 
-            <div className="footer">
-              <small className="hint">{t.required}</small>
+              {/* Email */}
+              <div>
+                <label className="block text-[11px] tracking-[0.28em] text-[#9aa4c7]">
+                  {t.email} <span className="text-[#f2c94c]">*</span>
+                </label>
+                <div className="mt-2">
+                  <input
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={t.emailPh}
+                    autoComplete="email"
+                    inputMode="email"
+                    className="w-full rounded-2xl border border-white/10 bg-[#0a0f1f]/70 px-4 py-3 text-sm outline-none transition focus:border-[#4da3ff]/45 focus:ring-2 focus:ring-[#4da3ff]/20"
+                  />
+                </div>
+              </div>
 
-              <button className="submit" type="submit" disabled={loading}>
-                {loading ? t.sending : t.send}
-              </button>
+              {/* Org */}
+              <div>
+                <label className="block text-[11px] tracking-[0.28em] text-[#9aa4c7]">
+                  {t.org} <span className="text-[#f2c94c]">*</span>
+                </label>
+                <div className="mt-2">
+                  <input
+                    value={org}
+                    onChange={(e) => setOrg(e.target.value)}
+                    placeholder={t.orgPh}
+                    autoComplete="organization"
+                    className="w-full rounded-2xl border border-white/10 bg-[#0a0f1f]/70 px-4 py-3 text-sm outline-none transition focus:border-[#4da3ff]/45 focus:ring-2 focus:ring-[#4da3ff]/20"
+                  />
+                </div>
+              </div>
 
-              <a className="back" href="/">
+              {/* Optional field hidden by default */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowOptional((v) => !v)}
+                  className={[
+                    "w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3",
+                    "text-left text-sm text-[#e6ebff] transition hover:bg-white/[0.05]",
+                    "flex items-center justify-between",
+                  ].join(" ")}
+                >
+                  <span className="text-[#9aa4c7]">{t.optional}</span>
+                  <span
+                    className={[
+                      "inline-flex h-7 w-7 items-center justify-center rounded-full",
+                      "border border-white/10 bg-[#0a0f1f]/70 text-[#e6ebff]/90",
+                      "transition",
+                      showOptional ? "rotate-45" : "",
+                    ].join(" ")}
+                    aria-hidden="true"
+                  >
+                    +
+                  </span>
+                </button>
+
+                {showOptional && (
+                  <div className="mt-3">
+                    <textarea
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      placeholder={t.msgPh}
+                      rows={4}
+                      className="w-full rounded-2xl border border-white/10 bg-[#0a0f1f]/70 px-4 py-3 text-sm outline-none transition focus:border-[#4da3ff]/45 focus:ring-2 focus:ring-[#4da3ff]/20 resize-none max-h-[160px] overflow-y-auto"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Error */}
+              {error && (
+                <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                  {error}
+                </div>
+              )}
+            </form>
+          </div>
+
+          {/* Footer with Landing-like button (always visible) */}
+          <div className="border-t border-white/10 bg-[#05070d]/40 px-7 sm:px-10 py-6">
+            <button
+              type="submit"
+              form="__unused"
+              onClick={(e) => {
+                // ensure submit triggers the same handler even if user clicked in footer
+                // We simply submit the first form in this card.
+                const root = (e.currentTarget.closest("div")?.parentElement ??
+                  null) as HTMLElement | null;
+                const form = root?.querySelector("form");
+                form?.requestSubmit();
+              }}
+              disabled={submitting}
+              className={[
+                "w-full rounded-full px-6 py-4 text-sm font-semibold tracking-wide transition",
+                "border border-[#f2c94c]/35",
+                "bg-[linear-gradient(135deg,rgba(242,201,76,0.95),rgba(242,201,76,0.65))]",
+                "text-[#05070d]",
+                "shadow-[0_22px_55px_rgba(242,201,76,0.14)]",
+                "hover:shadow-[0_30px_80px_rgba(242,201,76,0.18)]",
+                "disabled:opacity-60 disabled:cursor-not-allowed",
+              ].join(" ")}
+            >
+              {submitting ? t.sending : t.submit}
+            </button>
+
+            <div className="mt-3 text-center text-xs text-[#9aa4c7]">
+              {t.requiredNote}
+            </div>
+
+            <div className="mt-5 text-center">
+              <Link
+                href="/"
+                className="text-sm text-[#9aa4c7] hover:text-[#e6ebff] transition"
+              >
                 {t.backHome}
-              </a>
+              </Link>
             </div>
-          </form>
+          </div>
         </div>
       </section>
-
-      <style jsx>{`
-        .page {
-          min-height: 100vh;
-          background: radial-gradient(circle at top, #0c1230 0%, #05070d 60%);
-          color: #e6ebff;
-        }
-
-        .topbar {
-          height: 84px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 0 28px;
-          border-bottom: 1px solid rgba(148, 163, 184, 0.14);
-          backdrop-filter: blur(10px);
-          background: rgba(5, 7, 13, 0.35);
-        }
-
-        .brand {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          min-width: 180px;
-        }
-        .logo {
-          width: 34px;
-          height: 34px;
-          object-fit: contain;
-          filter: drop-shadow(0 0 18px rgba(242, 201, 76, 0.28))
-            drop-shadow(0 0 26px rgba(77, 163, 255, 0.18));
-        }
-        .brandName {
-          letter-spacing: 0.24em;
-          font-weight: 600;
-          opacity: 0.92;
-        }
-
-        .lang {
-          display: flex;
-          gap: 10px;
-          align-items: center;
-        }
-        .langBtn {
-          border: 1px solid rgba(242, 201, 76, 0.35);
-          background: rgba(2, 6, 23, 0.45);
-          color: #e6ebff;
-          padding: 8px 14px;
-          border-radius: 999px;
-          cursor: pointer;
-          font-weight: 600;
-          letter-spacing: 0.04em;
-          transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
-        }
-        .langBtn:hover {
-          transform: translateY(-1px);
-          border-color: rgba(242, 201, 76, 0.6);
-        }
-        .langBtn.active {
-          background: linear-gradient(135deg, #facc6b, #f2c94c);
-          color: #020617;
-          border-color: transparent;
-          box-shadow: 0 12px 30px rgba(250, 204, 21, 0.18);
-        }
-
-        .wrap {
-          width: 100%;
-          padding: 44px 18px 56px;
-          display: flex;
-          justify-content: center;
-        }
-
-        .card {
-          width: 100%;
-          max-width: 860px;
-          border-radius: 18px;
-          padding: 34px 28px 26px;
-          background: radial-gradient(circle at top, #111735 0%, #05070d 74%);
-          border: 1px solid rgba(148, 163, 184, 0.18);
-          box-shadow: 0 28px 80px rgba(0, 0, 0, 0.6);
-        }
-
-        .title {
-          font-size: 42px;
-          margin: 0 0 8px;
-          letter-spacing: 0.02em;
-        }
-
-        .subtitle {
-          margin: 0 0 22px;
-          color: #9aa4c7;
-          max-width: 760px;
-          line-height: 1.55;
-        }
-
-        .form {
-          margin-top: 6px;
-        }
-
-        .grid {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 14px;
-        }
-
-        .field {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .label {
-          font-size: 12px;
-          letter-spacing: 0.22em;
-          text-transform: uppercase;
-          color: rgba(230, 235, 255, 0.72);
-        }
-
-        .req {
-          color: #f2c94c;
-        }
-
-        .control {
-          width: 100%;
-          padding: 14px 14px;
-          border-radius: 12px;
-          border: 1px solid rgba(148, 163, 184, 0.28);
-          background: rgba(2, 6, 23, 0.65);
-          color: #e6ebff;
-          outline: none;
-          font-size: 15px;
-          transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-        }
-
-        .control:focus {
-          border-color: rgba(77, 163, 255, 0.75);
-          box-shadow: 0 0 0 2px rgba(77, 163, 255, 0.18);
-          background: rgba(2, 6, 23, 0.88);
-        }
-
-        .textarea {
-          min-height: 120px;
-          resize: vertical;
-        }
-
-        .alert {
-          margin-top: 14px;
-          padding: 12px 14px;
-          border-radius: 12px;
-          border: 1px solid rgba(239, 68, 68, 0.35);
-          background: rgba(239, 68, 68, 0.08);
-          color: rgba(255, 220, 220, 0.95);
-        }
-
-        .footer {
-          margin-top: 18px;
-          display: grid;
-          gap: 12px;
-          justify-items: center;
-        }
-
-        .hint {
-          color: rgba(154, 164, 199, 0.9);
-        }
-
-        .submit {
-          width: 100%;
-          max-width: 520px;
-          padding: 14px 22px;
-          border-radius: 999px;
-          border: 1px solid rgba(242, 201, 76, 0.75);
-          background: rgba(2, 6, 23, 0.35);
-          color: #f2c94c;
-          font-weight: 700;
-          letter-spacing: 0.04em;
-          cursor: pointer;
-          box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
-          transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease,
-            color 0.12s ease;
-        }
-
-        .submit:hover {
-          transform: translateY(-1px);
-          background: rgba(242, 201, 76, 0.08);
-          box-shadow: 0 24px 65px rgba(0, 0, 0, 0.45);
-        }
-
-        .submit:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-          transform: none;
-        }
-
-        .back {
-          color: rgba(154, 164, 199, 0.95);
-          text-decoration: none;
-          border-bottom: 1px solid rgba(154, 164, 199, 0.35);
-          padding-bottom: 2px;
-        }
-
-        .back:hover {
-          border-bottom-color: rgba(242, 201, 76, 0.55);
-          color: rgba(230, 235, 255, 0.95);
-        }
-
-        @media (max-width: 768px) {
-          .topbar {
-            padding: 0 16px;
-          }
-          .card {
-            padding: 26px 18px 22px;
-          }
-          .title {
-            font-size: 34px;
-          }
-        }
-      `}</style>
     </main>
   );
 }
